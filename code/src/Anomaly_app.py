@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import logging
 import os
+import re
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import zscore
@@ -33,7 +34,8 @@ class AnomalyDetector:
         """Preprocess data: handle missing values, scale features"""
         df = df.select_dtypes(include=[np.number])  # Keep only numeric columns
         df = df.dropna()  # Drop missing values
-        Need_col = [col for col in df.columns if 'balance' in col.lower()]
+        criteria = ['balance','bal','price','prc','quantity','quant','qnt','qunt','face','principal','interest','intrst','inventory','invtry'] # these are initial patterns, Later we can generate them as per diffrent dataset
+        Need_col = [col for col in df.columns if any(re.search(pattern,col.lower()) for pattern in criteria)]
         df = df[Need_col]
         scaler = StandardScaler()
         df_scaled = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
@@ -49,7 +51,7 @@ class AnomalyDetector:
     def detect_anomalies_zscore(self, df):
         """Detect anomalies using Z-score method"""
         z_scores = zscore(df)
-        df['zscore'] = (z_scores**2).sum(axis=1) ** 0.5
+        df['zscore'] = (z_scores**2).sum(axis=1) ** 0.5 #Used as Euclidean Norm to detect anomalies/Outliers in data
         df['anomaly_zscore'] = (df['zscore'] > 3).astype(int)
         df.drop(columns=['zscore'], inplace=True)
         return df
