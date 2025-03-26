@@ -33,6 +33,8 @@ class AnomalyDetector:
         """Preprocess data: handle missing values, scale features"""
         df = df.select_dtypes(include=[np.number])  # Keep only numeric columns
         df = df.dropna()  # Drop missing values
+        Need_col = [col for col in df.columns if 'balance' in col.lower()]
+        df = df[Need_col]
         scaler = StandardScaler()
         df_scaled = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
         return df_scaled
@@ -46,7 +48,8 @@ class AnomalyDetector:
 
     def detect_anomalies_zscore(self, df):
         """Detect anomalies using Z-score method"""
-        df['zscore'] = np.abs(zscore(df))
+        z_scores = zscore(df)
+        df['zscore'] = (z_scores**2).sum(axis=1) ** 0.5
         df['anomaly_zscore'] = (df['zscore'] > 3).astype(int)
         df.drop(columns=['zscore'], inplace=True)
         return df
